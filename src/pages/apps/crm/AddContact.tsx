@@ -15,7 +15,7 @@ const AddContact = () => {
         <Row>
           <Col xl={9}>
             <div className="d-sm-flex justify-content-between">
-              <h2 className="mb-4">Create a new lead</h2>
+              <h2 className="mb-4">Create a new client</h2>
               <div className="d-flex mb-3">
                 <Button variant="phoenix-primary" className="me-2 px-6">
                   Cancel
