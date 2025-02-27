@@ -3,17 +3,20 @@ import agent from "../api/agent.js";
 import { store } from "./store.js";
 //import { router } from "../router/Routes";
 import App from '../App.tsx'
-import {  useNavigate } from 'react-router-dom'
 
-const navigate = useNavigate()
+
 
 export default class UserStore {
   
   user = null;
-
+  navigate = null
 
   constructor() {
     makeAutoObservable(this);
+  }
+
+  setNavigate(navigateFunction) {
+    this.navigate = navigateFunction
   }
 
   get isLoggedIn() {

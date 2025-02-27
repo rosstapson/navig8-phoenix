@@ -4,11 +4,13 @@ import useToggleStyle from 'hooks/useToggleStyle';
 import { useAppContext } from 'providers/AppProvider';
 import { useSettingsPanelContext } from 'providers/SettingsPanelProvider';
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { store } from './stores/store.js'
 
 const App = () => {
   const { isStylesheetLoaded } = useToggleStyle();
   const { pathname } = useLocation();
+  const navigate = useNavigate()
 
   const {
     settingsPanelConfig: { showSettingPanelButton },
@@ -29,6 +31,10 @@ const App = () => {
       openSettingPanel: false
     });
   }, [isRTL]);
+
+  useEffect(() => {
+    store.userStore.setNavigate(navigate)
+  }, [navigate])
 
   return (
     <>
