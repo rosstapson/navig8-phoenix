@@ -1,0 +1,469 @@
+import { useEffect, useState } from "react";
+import {
+  Button,
+  Form,
+  Grid,
+  GridColumn,
+  GridRow,
+  Header,
+  Label,
+  Segment,
+  Select,
+} from "semantic-ui-react";
+import { useStore } from "../../../app/stores/store";
+import { observer } from "mobx-react-lite";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { v4 as uuid } from "uuid";
+//import { Formik, Form } from "formik";
+//import * as Yup from "yup";
+
+import LoadingComponent from "../../../app/layout/LoadingComponent";
+import { CompanyFormValues } from "../../../app/models/CompanyFormValues.js";
+import PlaceAutocomplete from "../../locations/common/PlaceAutoComplete";
+//import MySelectInput from "../../../app/common/form/MySelectInput";
+import MySingleFileUploader from "../../../app/common/form/MySingleFileUploader";
+import MyMultipleFileUploader from "../../../app/common/form/MyMultipleFileUploader";
+
+export default observer(function CompanyForm() {
+  const { companyStore } = useStore();
+
+  const {
+    createCompany,
+    updateCompany,
+    loading,
+    loadCompany,
+    loadingInitial,
+    uploadFile,
+    uploadFiles,
+  } = companyStore;
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const [company, setCompany] = useState(new CompanyFormValues());
+  const [selectedPlace, setSelectedPlace] = useState(null);
+
+  // file urls
+  const [companyLogoURL, setCompanyLogoURL] = useState("");
+  const [contractDocumentURL, setContractDocumentURL] = useState("");
+  const [applicationDocumentURLs, setApplicationDocumentURLs] = useState([]);
+
+  const titleOptions = [
+    { text: "Mr", value: "Mr" },
+    { text: "Mrs", value: "Mrs" },
+    { text: "Ms", value: "Ms" },
+    { text: "Other", value: "Other" },
+  ];
+
+  const paymentOptions = [
+    { text: "30 Days ", value: "30days" },
+    { text: "60 Days ", value: "60days" },
+    { text: "90 Days ", value: "90days" },
+    { text: "120 Days ", value: "120days" },
+    { text: "Upfront Payment", value: "upfrontPayment" },
+    { text: "COD - Payment on Delivery", value: "cod" },
+  ];
+
+  useEffect(() => {
+    if (id) {
+      loadCompany(id).then((company) => {
+        setCompany(new CompanyFormValues(company));
+      });
+    }
+  }, [id, loadCompany]);
+
+  function handleFormSubmit() {
+    if (!company.id) {
+      company.id = uuid();
+      company.companyLogoURL = companyLogoURL;
+      company.contractDocumentURL = contractDocumentURL;
+      company.applicationDocumentURLs = applicationDocumentURLs;
+
+      company.contactPerson = {
+        title : company.contactPersonTitle,
+        position : company.contactPersonPosition,
+        firstName: company.contactPersonFirstName,
+        surname: company.contactPersonSurname,
+        phoneNumber: company.contactPersonPhoneNumber,
+        alternativePhoneNumber: company.contactPersonAlternativePhoneNumber,
+        email: company.contactPersonEmail
+      }
+
+      console.log(company);
+      createCompany(company).then((result) => {
+        //navigate("/companies/" + company.id);
+        console.log(result);
+      });
+    }
+    
+  }
+
+  const handlePlaceSelected = (selectionEvent) => {
+    setSelectedPlace(selectionEvent);
+    if (selectionEvent && selectionEvent.formatted_address) {
+      var splitAddress = selectionEvent.formatted_address.split(", ");
+
+      // if it's < 6, pad it
+      while (splitAddress.length < 6) {
+        splitAddress.push("");
+      }
+      // if it's > 6 concatenate it
+      if (splitAddress.length > 6) {
+        splitAddress = splitAddress.slice(0, 6);
+      }
+
+      var tempCompany = company;
+      tempCompany.addressLine1 = splitAddress[0];
+      tempCompany.addressLine2 = splitAddress[1];
+      tempCompany.addressLine3 = splitAddress[2];
+      tempCompany.addressLine4 = splitAddress[3];
+      tempCompany.addressLine5 = splitAddress[4];
+      tempCompany.addressLine6 = splitAddress[5];
+
+      setCompany(tempCompany);
+    }
+  };
+
+  function handleInputChange(event) {
+    const { name, value } = event.target;
+    //console.log(name, value);
+    setCompany({ ...company, [name]: value });
+    //console.log(company);
+  }
+
+  function handleAddressInputChange(event) {
+    const { name, value } = event.target;
+    setCompany({ ...company, [name]: value });
+  }
+
+  function handleUploadCompanyLogo(file) {
+    try {
+      uploadFile(file).then((result) => {
+        // setCompany({
+        //   ...company,
+        //   companyLogoURL: result.data.id + result.data.virtualExtension,
+        // });
+        setCompanyLogoURL(result.data.id + result.data.virtualExtension);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function handleUploadContractDocument(file) {
+    try {
+      uploadFile(file).then((result) => {
+        // setCompany({
+        //   ...company,
+        //   contractDocumentURL: result.data.id + result.data.virtualExtension,
+        //});
+        setContractDocumentURL(result.data.id + result.data.virtualExtension);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  function handleUploadApplications(file) {
+    try {
+      uploadFiles(file).then((result) => {
+        var urls = [];
+        result.data.forEach((element) => {
+          urls.push(element.id + element.virtualExtension);
+        });
+        //setCompany({ ...company, applicationDocumentURLs: urls });
+        setApplicationDocumentURLs(urls);
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  // if (submitting) {
+  //     return <LoadingComponent content="Submitting..."/>
+  // }
+
+  if (loadingInitial) return <LoadingComponent content="Loading..." />;
+
+  return (
+    <Segment clearing>
+      <Header content="Company Details" sub color="teal" />
+      {/* <Formik
+        enableReinitialize
+        initialValues={company}
+        onSubmit={(values) => handleFormSubmit(values)}
+        validationSchema={validationSchema}
+      > */}
+
+      <Form className="ui form" onSubmit={handleFormSubmit} autoComplete="off">
+        <Grid>
+          <GridRow columns={1}>
+            <GridColumn>
+              <input
+                type="text"
+                name="companyName"
+                placeholder="Company Name"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="registrationNumber"
+                placeholder="Registration Number"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="vatNumber"
+                placeholder="Vat Number"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="websiteURL"
+                placeholder="Website Address"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="phoneNumber"
+                placeholder="Phone Number"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+        </Grid>
+
+        <Header content="Company Address" sub color="teal" />
+        <Grid>
+          <GridRow columns={1}>
+            <GridColumn>
+              <PlaceAutocomplete onPlaceSelect={handlePlaceSelected} />
+
+              {selectedPlace && (
+                <Label content={selectedPlace.formatted_address} />
+              )}
+            </GridColumn>
+          </GridRow>
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine1"
+                placeholder="Address line 1"
+                value={company.addressLine1}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine2"
+                placeholder="Address line 2"
+                value={company.addressLine2}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine3"
+                placeholder="Address line 3"
+                value={company.addressLine3}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine4"
+                placeholder="Address line 4"
+                value={company.addressLine4}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine5"
+                placeholder="Address line 5"
+                value={company.addressLine5}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="addressLine6"
+                placeholder="Address line 6"
+                value={company.addressLine6}
+                onChange={handleAddressInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+        </Grid>
+
+        <Header content="Contact Person" sub color="teal" />
+        <Grid>
+          <GridRow columns={1}>
+            <GridColumn>
+              <Form.Field>
+                <Select
+                  clearable
+                  options={titleOptions}
+                  name="contactPersonTitle"
+                  value={company.contactPersonTitle || null}
+                  onChange={(event, data) => setCompany({...company, [data.name]: data.value})}
+                  placeholder="Contact Person Title"
+                />
+              </Form.Field>
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonFirstName"
+                placeholder="First Name"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonSurname"
+                placeholder="Surname"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonPosition"
+                placeholder="Position"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonEmail"
+                placeholder="Email"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+          <GridRow columns={2}>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonPhoneNumber"
+                placeholder="Cellphone Number"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+            <GridColumn>
+              <input
+                type="text"
+                name="contactPersonAlternativePhoneNumber"
+                placeholder="Alternative Phone Number"
+                onChange={handleInputChange}
+              />
+            </GridColumn>
+          </GridRow>
+        </Grid>
+
+        <Header content="Payment Terms and Company Documents" sub color="teal" />
+        <Grid>
+          <GridRow columns={1}>
+            <GridColumn>
+              {/* <MySelectInput
+                name="paymentTerms"
+                placeholder="Payment Terms"
+                options={paymentOptions}
+                onChange={handleInputChange}
+              /> */}
+              <Form.Field>
+              <Select
+                  clearable
+                  options={paymentOptions}
+                  name="paymentTerms"
+                  value={company.paymentTerms || null}
+                  onChange={(event, data) => setCompany({...company, [data.name]: data.value})}
+                  placeholder="Payment Terms"
+                />
+              </Form.Field>
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={2}>
+            <GridColumn>
+              <MySingleFileUploader
+                name="contractDocumentURL"
+                placeholder="Upload Contract"
+                upload={handleUploadContractDocument}
+              />
+            </GridColumn>
+            <GridColumn>
+              <MyMultipleFileUploader
+                name="applicationDocumentURLs"
+                placeholder="Upload Applications"
+                uploadMultiple={handleUploadApplications}
+              />
+            </GridColumn>
+          </GridRow>
+
+          <GridRow columns={1}>
+            <GridColumn>
+              <MySingleFileUploader
+                name="companyLogoURL"
+                placeholder="Upload Company Logo"
+                upload={handleUploadCompanyLogo}
+              />
+            </GridColumn>
+          </GridRow>
+        </Grid>
+
+        <br />
+        <Button
+          //disabled={isSubmitting || !dirty || !isValid}
+          loading={loading}
+          floated="right"
+          positive
+          type="submit"
+          content="Submit"
+        />
+        <Button
+          as={Link}
+          to="/companies"
+          floated="right"
+          positive
+          type="button"
+          content="Cancel"
+        />
+      </Form>
+
+      {/* </Formik> */}
+    </Segment>
+  );
+});

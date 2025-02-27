@@ -11,7 +11,8 @@ export interface UsePhoenixFormResult<T> {
 }
 
 const usePhoenixForm = <T,>(
-  defaultValues?: Partial<T>
+  defaultValues?: Partial<T>,
+  onSubmitCallback?: (data: T) => void
 ): UsePhoenixFormResult<T> => {
   const [formData, setFormData] = useState<T>({
     ...(defaultValues || {})
@@ -38,6 +39,7 @@ const usePhoenixForm = <T,>(
   const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log({ formData });
+    onSubmitCallback?.(formData)
   };
   return { formData, setFormData, setValue, onChange, onSubmit };
 };

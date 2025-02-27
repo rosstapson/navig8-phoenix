@@ -151,7 +151,7 @@ import CardTwoFA from 'pages/pages/authentication/card/TwoFA';
 import CardLockScreen from 'pages/pages/authentication/card/LockScreen';
 import Leads from 'pages/apps/crm/Leads';
 import Reports from 'pages/apps/crm/Reports';
-import AddContact from 'pages/apps/crm/AddContact';
+import AddClient from 'pages/apps/clients/AddClient';
 import PricingGrid from 'pages/pages/pricing/PricingGrid';
 import SplitSignIn from 'pages/pages/authentication/split/SignIn';
 import SplitSignUp from 'pages/pages/authentication/split/SignUp';
@@ -245,7 +245,7 @@ const routes: RouteObject[] = [
             children: [
               
               {
-                path: 'crm',
+                path: 'clients',
                 children: [
                   {
                     path: 'analytics',
@@ -276,8 +276,8 @@ const routes: RouteObject[] = [
                     element: <Reports />
                   },
                   {
-                    path: 'add-contact',
-                    element: <AddContact />
+                    path: 'add-client',
+                    element: <AddClient />
                   }
                 ]
               },
